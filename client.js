@@ -126,8 +126,8 @@
         btnStart.textContent = '...';
       },
       onResult: (txt, confidence, evt) => {
-        txtInstructions.value += `${Math.round(confidence * 100) /
-          100}% sure.\nResult received`;
+        txtInstructions.value += `${(Math.round(confidence * 100) / 100) *
+          100}% confident\nResult received\n`;
         if (txt.indexOf('antidisestablishmentarianism') >= 0) {
           txtInstructions.value += 'antidisestablishmentarianism removed.\n';
         }
