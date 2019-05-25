@@ -195,3 +195,8 @@ code {
     margin-bottom: 48px;
   }
 }
+@media only screen and (max-width: 570px) {
+  #controls {
+    position: relative;
+  }
+}
