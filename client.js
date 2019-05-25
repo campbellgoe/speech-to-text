@@ -8,6 +8,7 @@
     const btnLoad = d.getElementById('btn-load');
     const inputSave = d.getElementById('input-save');
     const inputLoad = d.getElementById('input-load');
+    const btnOutput = d.getElementById('btn-output');
     return {
       btnStart,
       txtOutput,
@@ -16,6 +17,7 @@
       btnLoad,
       inputSave,
       inputLoad,
+      btnOutput,
     };
   };
   const setupSTT = ({
@@ -25,6 +27,7 @@
     onStart = Function.prototype,
     onSpeechEnd = Function.prototype,
     onResult = Function.prototype,
+    onStopped = Function.prototype,
   } = {}) => {
     let SpeechRecognition;
     let recognition;
@@ -41,10 +44,12 @@
     };
     recognition.onnomatch = function(event) {
       onNoMatch(event);
+      onStopped();
     };
     recognition.onspeechend = function() {
       //instructions.text('You were quiet for a while so voice recognition turned itself off.');
       onSpeechEnd();
+      onStopped();
     };
 
     recognition.onerror = function(event) {
@@ -54,6 +59,7 @@
       } else {
         onError(event);
       }
+      onStopped();
     };
     recognition.onresult = function(event) {
       // event is a SpeechRecognitionEvent object.
@@ -84,11 +90,19 @@
       btnLoad,
       inputSave,
       inputLoad,
+      btnOutput,
     } = getElements(document);
     let dontStart = false;
     let toId;
+    let t0, t1;
     const STT = setupSTT({
+      onStopped: () => {
+        btnStart.textContent = 'Start';
+        txtOutput.classList.add('inner-shadow');
+        console.log('stopped');
+      },
       onError: (err, supported) => {
+        console.log(err);
         if (err === 1)
           err = {
             error:
@@ -96,7 +110,6 @@
           };
         txtInstructions.value +=
           '\nError: ' + (err.error || JSON.stringify(err, false, 2)) + '\n';
-        btnStart.textContent = 'Start';
         if (supported === false) {
           const pNoSupport = document.createElement('p');
           pNoSupport.textContent =
@@ -108,24 +121,31 @@
         }
       },
       onNoSpeech: () => {
-        txtInstructions.value += 'No speech detected\n';
-        btnStart.textContent = 'Start';
+        console.log('No speech detected');
+        //txtInstructions.value += 'No speech detected\n';
       },
       onNoMatch: () => {
-        txtInstructions.value += "Couldn't understand\n";
-        btnStart.textContent = 'Start';
+        console.log("Couldn't understand");
+        //txtInstructions.value += "Couldn't understand\n";
       },
       onSpeechEnd: () => {
-        txtInstructions.value += 'Ended recording\n';
-        btnStart.textContent = 'Start';
+        console.log('Ended recording');
+        //txtInstructions.value += 'Ended recording\n';
       },
       onStart: () => {
-        txtInstructions.value += 'Started recording\n';
+        console.log('Started ecording');
+        //txtInstructions.value += 'Started recording\n';
         btnStart.textContent = 'Stop';
+        txtOutput.classList.remove('inner-shadow');
       },
       onResult: (txt, confidence, evt) => {
-        txtInstructions.value += `${(Math.round(confidence * 100) / 100) *
-          100}% confident\nResult received\n`;
+        t1 = Date.now();
+        let time = t1 - t0;
+        let humanTime = new Date(time).toUTCString().slice(17, 17 + 8);
+        txtInstructions.value += `${humanTime}\n`;
+        console.log(`${(Math.round(confidence * 100) / 100) * 100}% confident`);
+        //txtInstructions.value += `${(Math.round(confidence * 100) / 100) *
+        //  100}% confident\nResult received\n`;
         if (txt.indexOf('antidisestablishmentarianism') >= 0) {
           txtInstructions.value += 'antidisestablishmentarianism removed.\n';
         }
@@ -138,35 +158,58 @@
         txtOutput.value += txt + '\n';
         let outputNewlines = txtOutput.value.split('\n').length - 1;
         let instructionNewlines = txtInstructions.value.split('\n').length - 1;
+        //TOOD: add logic to ensure instructions line matches speech line
+        //this won't work when speech wraps without a newline character
         if (outputNewlines > instructionNewlines) {
           let extraNewlines = outputNewlines - instructionNewlines + 1;
           txtInstructions.value += new Array(extraNewlines).fill('\n').join('');
-        } else if (outputNewlines < instructionNewlines) {
-          let extraNewlines = instructionNewlines - outputNewlines + 1;
-          txtOutput.value += new Array(extraNewlines).fill('\n').join('');
-        }
+        } // else if (outputNewlines < instructionNewlines) {
+        //   let extraNewlines = instructionNewlines - outputNewlines + 1;
+        //   txtOutput.value += new Array(extraNewlines).fill('\n').join('');
+        // }
         txtOutput.scrollBy(0, window.innerHeight * 100);
         txtInstructions.scrollBy(0, window.innerHeight * 100);
         if (!dontStart) {
           toId = setTimeout(() => {
-            STT.start();
-          }, 30);
+            try {
+              STT.start();
+            } catch (err) {
+              toId = setTimeout(() => {
+                try {
+                  STT.start();
+                } catch (err) {
+                  console.log('already started');
+                }
+              }, 40);
+            }
+          }, 40);
         }
       },
     });
     btnStart.addEventListener('click', () => {
+      console.log('started!');
       dontStart = false;
       if (btnStart.textContent === 'Start') {
         STT.start();
         console.log('started');
+        t0 = Date.now();
       } else {
         clearTimeout(toId);
         dontStart = true;
         STT.stop();
         STT.abort();
-        console.log('stopped');
+        console.log('aborted');
         btnStart.textContent = 'Start';
-        txtInstructions.value += 'Stopped recording\n';
+        txtOutput.classList.remove('inner-shadow');
+        //txtInstructions.value += 'Stopped recording\n';
+      }
+    });
+    btnOutput.addEventListener('click', () => {
+      STT.stop();
+      try {
+        STT.start();
+      } catch (err) {
+        console.warn('cannot start again after cliking output..', err);
       }
     });
     btnSave.addEventListener('click', () => {
