@@ -2,7 +2,6 @@
 (function() {
   const getElements = d => {
     const btnStart = d.getElementById('btn-start');
-    const btnEnd = d.getElementById('btn-end');
     const txtOutput = d.getElementById('txt-output');
     const txtInstructions = d.getElementById('txt-instructions');
     const btnSave = d.getElementById('btn-save');
@@ -11,7 +10,6 @@
     const inputLoad = d.getElementById('input-load');
     return {
       btnStart,
-      btnEnd,
       txtOutput,
       txtInstructions,
       btnSave,
@@ -80,7 +78,6 @@
   window.addEventListener('DOMContentLoaded', () => {
     const {
       btnStart,
-      btnEnd,
       txtOutput,
       txtInstructions,
       btnSave,
@@ -89,6 +86,7 @@
       inputLoad,
     } = getElements(document);
     let dontStart = false;
+    let toId;
     const STT = setupSTT({
       onError: (err, supported) => {
         if (err === 1)
@@ -123,7 +121,7 @@
       },
       onStart: () => {
         txtInstructions.value += 'Started recording\n';
-        btnStart.textContent = '...';
+        btnStart.textContent = 'Stop';
       },
       onResult: (txt, confidence, evt) => {
         txtInstructions.value += `${(Math.round(confidence * 100) / 100) *
@@ -150,9 +148,9 @@
         txtOutput.scrollBy(0, window.innerHeight * 100);
         txtInstructions.scrollBy(0, window.innerHeight * 100);
         if (!dontStart) {
-          setTimeout(() => {
+          toId = setTimeout(() => {
             STT.start();
-          }, 500);
+          }, 30);
         }
       },
     });
@@ -160,13 +158,16 @@
       dontStart = false;
       if (btnStart.textContent === 'Start') {
         STT.start();
+        console.log('started');
       } else {
-        console.warn('Already recording...');
+        clearTimeout(toId);
+        dontStart = true;
+        STT.stop();
+        STT.abort();
+        console.log('stopped');
+        btnStart.textContent = 'Start';
+        txtInstructions.value += 'Stopped recording\n';
       }
-    });
-    btnEnd.addEventListener('click', () => {
-      dontStart = true;
-      STT.stop();
     });
     btnSave.addEventListener('click', () => {
       const saveName = 'STT_' + inputSave.value;
