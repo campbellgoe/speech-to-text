@@ -96,7 +96,7 @@
           };
         txtInstructions.value +=
           '\nError: ' + (err.error || JSON.stringify(err, false, 2)) + '\n';
-        btnStart.textContent = 'Start';
+        btnStart.textContent = 'Record';
         if (supported === false) {
           const pNoSupport = document.createElement('p');
           pNoSupport.textContent =
@@ -109,15 +109,15 @@
       },
       onNoSpeech: () => {
         txtInstructions.value += 'No speech detected\n';
-        btnStart.textContent = 'Start';
+        btnStart.textContent = 'Record';
       },
       onNoMatch: () => {
         txtInstructions.value += "Couldn't understand\n";
-        btnStart.textContent = 'Start';
+        btnStart.textContent = 'Record';
       },
       onSpeechEnd: () => {
         txtInstructions.value += 'Ended recording\n';
-        btnStart.textContent = 'Start';
+        btnStart.textContent = 'Record';
       },
       onStart: () => {
         txtInstructions.value += 'Started recording\n';
@@ -130,7 +130,7 @@
           txtInstructions.value += 'antidisestablishmentarianism removed.\n';
         }
         console.log('result:', evt);
-        btnStart.textContent = 'Start';
+        btnStart.textContent = 'Record';
         txt = txt.split('new line').join('\n');
         txt = txt.split('antidisestablishmentarianism').join('');
         txt = txt.split('dot dot dot').join('...');
@@ -156,7 +156,7 @@
     });
     btnStart.addEventListener('click', () => {
       dontStart = false;
-      if (btnStart.textContent === 'Start') {
+      if (btnStart.textContent === 'Record') {
         STT.start();
         console.log('started');
       } else {
@@ -165,7 +165,7 @@
         STT.stop();
         STT.abort();
         console.log('stopped');
-        btnStart.textContent = 'Start';
+        btnStart.textContent = 'Record';
         txtInstructions.value += 'Stopped recording\n';
       }
     });
