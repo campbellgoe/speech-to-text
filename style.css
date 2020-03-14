@@ -196,7 +196,7 @@ code {
   }
 }
 @media only screen and (max-width: 570px) {
-  #controls {
-    position: relative;
+  #help {
+    margin-right: 128px;
   }
 }
